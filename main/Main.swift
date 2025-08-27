@@ -16,21 +16,35 @@ func app_main() {
         }
     }
 
+    // Initialize LD2410C sensor
+    ld2410c_init()
+    print("LD2410C Initialized")
+
     // Create the occupancy sensor device
     let occupancySensor = OccupancySensor(roomName: "Living Room")
 
     // Start Matter
     Matter.start(deviceEventCallback)
 
+    var lastPresence = false
+
     // Keep the main thread alive
     while true {
-        // Simulate occupancy changes
-        sleep(5)
-        occupancySensor.setOccupied(true)
-        print("Occupancy detected")
-        sleep(5)
-        occupancySensor.setOccupied(false)
-        print("Occupancy cleared")
+        ld2410c_poll()
+        let isPresent = ld2410c_is_present()
+
+        if isPresent != lastPresence {
+            occupancySensor.setOccupied(isPresent)
+            if isPresent {
+                print("Occupancy detected")
+            } else {
+                print("Occupancy cleared")
+            }
+            lastPresence = isPresent
+        }
+
+        // Poll every second
+        sleep(1)
     }
 }
 

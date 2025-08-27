@@ -25,6 +25,7 @@ char *strdup(const char *s1);
 #include <esp_matter_event.h>
 #include <app/server/Server.h>
 #include "ld2410c_wrapper.h"
+#include "MatterInterface.h"
 #endif
 
 // C HEADERS
@@ -35,7 +36,6 @@ extern "C" {
 #include "esp_err.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
-#include "MatterInterface.h"
 
 #ifdef __cplusplus
 }
