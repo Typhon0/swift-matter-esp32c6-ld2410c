@@ -1,52 +1,45 @@
-//===----------------------------------------------------------------------===//
-//
-// This source file is part of the Swift open source project
-//
-// Copyright (c) 2024 Apple Inc. and the Swift project authors.
-// Licensed under Apache License v2.0 with Runtime Library Exception
-//
-// See https://swift.org/LICENSE.txt for license information
-//
-//===----------------------------------------------------------------------===//
+#ifndef BRIDGING_HEADER_H
+#define BRIDGING_HEADER_H
 
-// C standard library
-// ==================
+#include <stddef.h> // For size_t
 
-#include <stdio.h>
-#include <math.h>
+// There seems to be an assumption in some C++ headers that strnlen and strdup
+// are implicitly available, but this is not the case when importing into Swift.
+// We manually declare them here as a workaround.
+#ifdef __cplusplus
+extern "C" {
+#endif
+size_t strnlen(const char *s, size_t maxlen);
+char *strdup(const char *s1);
+#ifdef __cplusplus
+}
+#endif
 
-// ESP IDF
-// =======
-
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <led_strip.h>
-#include <sdkconfig.h>
-#include <nvs_flash.h>
-#include <led_driver.h>
-#include <device.h>
-
-// ESP Matter
-// ==========
-
-#define CHIP_HAVE_CONFIG_H 1
-#define CHIP_USE_ENUM_CLASS_FOR_IM_ENUM 1
-#define CHIP_ADDRESS_RESOLVE_IMPL_INCLUDE_HEADER <lib/address_resolve/AddressResolve_DefaultImpl.h>
-
-// There seems to be assumption in FabricTable.h that strnlen is implicitly available via some other headers, but that
-// turns out to not be the case when importing these headers in Swift. Let's manually declare strnlen as a workaround.
-//
-// connectedhomeip/src/credentials/FabricTable.h:82:69: error: use of undeclared identifier 'strnlen'
-extern "C" size_t strnlen(const char *s, size_t maxlen);
-// esp-matter/components/esp_matter/esp_matter_client.h:57:26: error: use of undeclared identifier 'strdup'
-extern "C" char *strdup(const char *s1);
-
+// C++ HEADERS
+#if __cplusplus
 #include <esp_matter.h>
+#include <esp_matter_core.h>
+#include <esp_matter_endpoint.h>
 #include <esp_matter_cluster.h>
-#include <app-common/zap-generated/ids/Clusters.h>
+#include <esp_matter_attribute.h>
+#include <esp_matter_event.h>
 #include <app/server/Server.h>
+#include "ld2410c_wrapper.h"
+#endif
 
-// Swift Matter interface
-// ======================
+// C HEADERS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "../Matter/MatterInterface.h"
+#include "esp_err.h"
+#include "esp_log.h"
+#include "nvs_flash.h"
+#include "MatterInterface.h"
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* BRIDGING_HEADER_H */
+

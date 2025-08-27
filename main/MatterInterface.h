@@ -1,4 +1,6 @@
-#ifndef MATTER_INTERFACE_H
+#ifndef MATTEuint16_t create_occupancy_sensor_endpoint(esp_matter_node_t *node, const char *room_name);
+void set_occupancy_attribute_value(uint16_t endpoint_id, bool occupied);
+esp_matter_node_t *esp_matter_node_create();INTERFACE_H
 #define MATTER_INTERFACE_H
 
 #include <stdint.h>
@@ -11,16 +13,8 @@ extern "C" {
 // Forward declaration for the opaque pointer
 typedef struct esp_matter_node_s esp_matter_node_t;
 
-// Forward declaration for event callback
-typedef void (*device_event_callback_t)(const void *event, intptr_t arg);
-
 uint16_t create_occupancy_sensor_endpoint(esp_matter_node_t *node, const char *room_name);
 void set_occupancy_attribute_value(uint16_t endpoint_id, bool occupied);
-esp_matter_node_t *esp_matter_node_create_wrapper();
-void esp_matter_start_wrapper(device_event_callback_t callback);
-
-// Define event constants for Swift
-#define MATTER_EVENT_POST_ATTRIBUTE_UPDATE 10 // Corresponds to ESP_MATTER_EVENT_POST_ATTRIBUTE_UPDATE
 
 #ifdef __cplusplus
 }

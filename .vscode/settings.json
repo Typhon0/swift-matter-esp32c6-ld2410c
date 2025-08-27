@@ -1,10 +1,12 @@
 {
-  "idf.pythonInstallPath": "/usr/local/bin/python3",
+  "idf.pythonInstallPath": "/usr/local/opt/python@3.13/Frameworks/Python.framework/Versions/3.13/bin/python3",
   "idf.openOcdConfigs": [
     "board/esp32c6-builtin.cfg"
   ],
-  "idf.port": "/dev/tty.usbmodem14401",
+  "idf.port": "/dev/tty.URT2",
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32c6"
-  }
+  },
+  "idf.espIdfPath": "/Users/loic/esp/esp-idf",
+  "idf.toolsPath": "/Users/loic/.espressif"
 }

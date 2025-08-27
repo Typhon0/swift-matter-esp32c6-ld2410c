@@ -1,68 +1,47 @@
-//===----------------------------------------------------------------------===//
-//
-// This source file is part of the Swift open source project
-//
-// Copyright (c) 2024 Apple Inc. and the Swift project authors.
-// Licensed under Apache License v2.0 with Runtime Library Exception
-//
-// See https://swift.org/LICENSE.txt for license information
-//
-//===----------------------------------------------------------------------===//
-
 @_cdecl("app_main")
-func main() {
-  print("🏎️   Hello, Embedded Swift! (Smart Light)")
+func app_main() {
+    print("Starting Matter Occupancy Sensor...")
 
-  let led = LED()
-
-  // (1) Create a Matter root node
-  let rootNode = Matter.Node()
-  rootNode.identifyHandler = {
-    print("identify")
-  }
-
-  // (2) Create a "light" endpoint
-  let lightEndpoint = Matter.ExtendedColorLight(node: rootNode)
-  lightEndpoint.eventHandler = { event in
-    print("lightEndpoint.eventHandler:")
-    print(event.attribute)
-    print(event.value)
-
-    switch event.attribute {
-    case .onOff:
-      led.enabled = (event.value == 1)
-
-    case .levelControl:
-      led.brightness = Int(Float(event.value) / 255.0 * 100.0)
-
-    case .colorControl(.currentHue):
-      let newHue = Int(Float(event.value) / 255.0 * 360.0)
-      led.color = .hueSaturation(newHue, led.color.saturation)
-
-    case .colorControl(.currentSaturation):
-      let newSaturation = Int(Float(event.value) / 255.0 * 100.0)
-      led.color = .hueSaturation(led.color.hue, newSaturation)
-
-    case .colorControl(.colorTemperatureMireds):
-      let kelvins = 1_000_000 / event.value
-      led.color = .temperature(kelvins)
-
-    default:
-      break
+    // Initialize NVS
+    let ret = nvs_flash_init()
+    if ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND {
+        print("NVS flash initialization failed, erasing and retrying...")
+        guard nvs_flash_erase() == ESP_OK else {
+            print("Failed to erase NVS")
+            return
+        }
+        guard nvs_flash_init() == ESP_OK else {
+            print("Failed to initialize NVS after erase")
+            return
+        }
     }
-  }
 
-  // (3) Add the endpoint to the node
-  rootNode.addEndpoint(lightEndpoint)
+    // Create the occupancy sensor device
+    let occupancySensor = OccupancySensor(roomName: "Living Room")
 
-  // (4) Provide the node to a Matter application and start it
-  let app = Matter.Application()
-  app.rootNode = rootNode
-  app.start()
+    // Start Matter
+    Matter.start(deviceEventCallback)
 
-  // Keep local variables alive. Workaround for issue #10
-  // https://github.com/apple/swift-matter-examples/issues/10
-  while true {
-    sleep(1)
-  }
+    // Keep the main thread alive
+    while true {
+        // Simulate occupancy changes
+        sleep(5)
+        occupancySensor.setOccupied(true)
+        print("Occupancy detected")
+        sleep(5)
+        occupancySensor.setOccupied(false)
+        print("Occupancy cleared")
+    }
 }
+
+func deviceEventCallback(_ event: UnsafeRawPointer?, _ context: Int) {
+    // This is a C-style callback, so we need to be careful with types.
+    // The event is a pointer to a ChipDeviceEvent, but we can't directly use that type here.
+    // We can, however, check the event type ID.
+    // The event type for post-attribute-update is device-specific, so we can't rely on a fixed value.
+    // For now, we'll just print a generic message.
+    print("Received a device event.")
+}
+
+
+

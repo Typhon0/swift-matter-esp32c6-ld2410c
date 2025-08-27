@@ -1,9 +1,7 @@
-# In main/CMakeLists.txt
 idf_component_register(
-    SRCS "../Matter/MatterInterface.cpp"
-    PRIV_INCLUDE_DIRS "."
-    # This is the complete and correct list of dependencies
-    PRIV_REQUIRES esp_matter esp_matter_console espressif__led_strip led_driver device
+    SRCS "ld2410_driver.cpp" "ld2410c_wrapper.cpp" "../Matter/MatterInterface.cpp"
+    PRIV_INCLUDE_DIRS "." "../Matter"
+    PRIV_REQUIRES  esp_matter esp_matter_console espressif__led_strip
     LDFRAGMENTS "linker.lf" 
 )
 
@@ -95,10 +93,8 @@ enable_language(Swift)
 target_sources(${COMPONENT_LIB}
     PRIVATE
     Main.swift
-    LED.swift
-    LD2410C.swift
-    ../Matter/Attribute.swift
-    ../Matter/Clusters.swift
     ../Matter/Matter.swift
     ../Matter/Node.swift
+    ../Matter/OccupancySensor.swift
+    ../Matter/Device.swift
 )
