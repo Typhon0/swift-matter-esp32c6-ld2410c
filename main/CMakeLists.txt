@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "ld2410_driver.cpp" "ld2410c_wrapper.cpp" "../Matter/MatterInterface.cpp"
+    SRCS "ld2410_driver.cpp" "ld2410c_wrapper.cpp" "../Matter/MatterInterface.cpp" "freertos_utils.c"
     PRIV_INCLUDE_DIRS "." "../Matter"
     PRIV_REQUIRES  esp_matter esp_matter_console espressif__led_strip
     LDFRAGMENTS "linker.lf" 

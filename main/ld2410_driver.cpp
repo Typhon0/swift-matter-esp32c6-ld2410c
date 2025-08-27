@@ -145,6 +145,7 @@ std::string LD2410Driver::getMAC() {
 }
 
 bool LD2410Driver::configMode(bool enable) {
+    uart_flush(uart_num);
     const uint8_t* cmd = enable ? CMD_ENABLE_CONFIG : CMD_DISABLE_CONFIG;
     const uint8_t cmd_val = enable ? 0xFF : 0xFE;
     

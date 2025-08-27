@@ -1,4 +1,3 @@
-#include "app_priv.h"
 #include <esp_matter_cluster.h>
 #include <esp_matter_core.h>
 #include <esp_matter.h>

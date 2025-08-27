@@ -2,6 +2,8 @@
 #include "ld2410_driver.h"
 #include "driver/uart.h"
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 // Using UART1, but this can be changed.
 // Make sure to connect the LD2410C sensor to the correct pins on the ESP32-C6.
@@ -12,11 +14,15 @@
 #define LD2410_TX_PIN 2
 #define LD2410_RX_PIN 3
 
-static const char *TAG = "ld2410c_wrapper";
+static const char *TAG_WRAPPER = "ld2410c_wrapper";
 static LD2410Driver* ld2410_sensor = nullptr;
 
 void ld2410c_init() {
-    ESP_LOGI(TAG, "Initializing LD2410C sensor driver.");
+    ESP_LOGI(TAG_WRAPPER, "Initializing LD2410C sensor driver.");
+
+    // Give the sensor a moment to power up fully before communication.
+    vTaskDelay(pdMS_TO_TICKS(500));
+
     // Initialize the UART driver
     uart_config_t uart_config = {
         .baud_rate = 256000,
@@ -32,15 +38,15 @@ void ld2410c_init() {
 
     ld2410_sensor = new LD2410Driver(LD2410_UART_NUM, true);
     if (!ld2410_sensor->begin()) {
-        ESP_LOGW(TAG, "LD2410C sensor did not acknowledge exit config mode. This is often normal on startup. Continuing...");
+        ESP_LOGW(TAG_WRAPPER, "LD2410C sensor did not acknowledge exit config mode. This is often normal on startup. Continuing...");
     }
 
-    ESP_LOGI(TAG, "LD2410C sensor initialized.");
+    ESP_LOGI(TAG_WRAPPER, "LD2410C sensor initialized.");
     std::string fw = ld2410_sensor->getFirmware();
     if (!fw.empty()) {
-        ESP_LOGI(TAG, "LD2410C Firmware: %s", fw.c_str());
+        ESP_LOGI(TAG_WRAPPER, "LD2410C Firmware: %s", fw.c_str());
     } else {
-        ESP_LOGW(TAG, "Could not read LD2410C firmware version.");
+        ESP_LOGW(TAG_WRAPPER, "Could not read LD2410C firmware version.");
     }
 }
 
@@ -54,7 +60,7 @@ bool ld2410c_is_present() {
     if (ld2410_sensor) {
         return ld2410_sensor->presenceDetected();
     }
-    ESP_LOGW(TAG, "ld2410c_is_present() called before initialization.");
+    ESP_LOGW(TAG_WRAPPER, "ld2410c_is_present() called before initialization.");
     return false;
 }
 

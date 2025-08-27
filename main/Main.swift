@@ -2,6 +2,17 @@
 func app_main() {
     print("Starting Matter Occupancy Sensor...")
 
+    // Set log levels to reduce verbosity
+    esp_log_level_set("*", ESP_LOG_INFO)
+            esp_log_level_set("esp_matter", ESP_LOG_DEBUG)
+        esp_log_level_set("ld2410c_wrapper", ESP_LOG_INFO)
+        esp_log_level_set("LD2410", ESP_LOG_INFO)
+        esp_log_level_set("esp_matter_attribute", ESP_LOG_INFO)
+    esp_log_level_set("LD2410", ESP_LOG_WARN)
+    esp_log_level_set("wifi", ESP_LOG_WARN)
+    esp_log_level_set("chip", ESP_LOG_WARN)
+
+
     // Initialize NVS
     let ret = nvs_flash_init()
     if ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND {
@@ -43,8 +54,8 @@ func app_main() {
             lastPresence = isPresent
         }
 
-        // Poll every second
-        sleep(1)
+        // Poll every 250ms
+        vTaskDelay(ms_to_ticks(250))
     }
 }
 
