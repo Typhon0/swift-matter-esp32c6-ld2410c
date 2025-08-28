@@ -18,6 +18,7 @@
 static const char *TAG_WRAPPER = "ld2410c_wrapper";
 static LD2410Driver* ld2410_sensor = nullptr;
 static uint32_t ld2410_init_time_ms = 0;
+static char ld2410_fw_str[32] = {0};
 
 void ld2410c_init() {
     ESP_LOGI(TAG_WRAPPER, "Initializing LD2410C sensor driver.");
@@ -48,6 +49,7 @@ void ld2410c_init() {
     std::string fw = ld2410_sensor->getFirmware();
     if (!fw.empty()) {
         ESP_LOGI(TAG_WRAPPER, "LD2410C Firmware: %s", fw.c_str());
+    strncpy(ld2410_fw_str, fw.c_str(), sizeof(ld2410_fw_str) - 1);
     } else {
         ESP_LOGW(TAG_WRAPPER, "Could not read LD2410C firmware version.");
     }
@@ -82,6 +84,47 @@ void ld2410c_poll() {
             warnedNoData = true;
         }
         (void)present; // present is derived from status
+
+        // Publish vendor telemetry periodically (simple change detection)
+        static uint32_t last_publish_ms = 0;
+        const uint32_t publish_interval_ms = 250; // throttle
+        if (now_ms - last_publish_ms >= publish_interval_ms) {
+            // Avoid publishing before Matter dynamic endpoint fully registered
+            if ((now_ms - ld2410_init_time_ms) < 4000) {
+                return;
+            }
+            last_publish_ms = now_ms;
+            const LD2410Driver::SensorData &sd = ld2410_sensor->getSensorData();
+            // Scalars
+            ld2410c_update_vendor_scalars(
+                (uint16_t)ld2410_sensor->movingTargetDistance(),
+                ld2410_sensor->movingTargetSignal(),
+                (uint16_t)ld2410_sensor->stationaryTargetDistance(),
+                ld2410_sensor->stationaryTargetSignal(),
+                (uint16_t)ld2410_sensor->detectedDistance(),
+                ld2410_sensor->inEnhancedMode(),
+                (uint16_t)ld2410_sensor->getRange_cm(),
+                ld2410_sensor->getLightLevel(),
+                ld2410_sensor->getLightThreshold(),
+                ld2410_sensor->getOutLevel(),
+                (uint8_t)ld2410_sensor->getAutoStatus()
+            );
+
+            // Arrays (signals & thresholds) only if enhanced mode
+            if (ld2410_sensor->inEnhancedMode()) {
+                const auto &mvSig = ld2410_sensor->getMovingSignals();
+                const auto &stSig = ld2410_sensor->getStationarySignals();
+                const auto &mvThr = ld2410_sensor->getMovingThresholds();
+                const auto &stThr = ld2410_sensor->getStationaryThresholds();
+                ld2410c_update_vendor_arrays(
+                    mvSig.values, mvSig.N,
+                    stSig.values, stSig.N,
+                    mvThr.values, mvThr.N,
+                    stThr.values, stThr.N,
+                    ld2410_fw_str[0] ? ld2410_fw_str : nullptr
+                );
+            }
+        }
     }
 }
 
