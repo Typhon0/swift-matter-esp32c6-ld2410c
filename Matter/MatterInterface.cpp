@@ -34,18 +34,14 @@ uint16_t create_occupancy_sensor_endpoint(esp_matter_node_t *node, const char* r
     if (!cpp_node) {
         return 0;
     }
-
     using namespace esp_matter::endpoint;
-    occupancy_sensor::config_t occupancy_sensor_config;
-    occupancy_sensor_config.occupancy_sensing.feature_flags = (1 << 0) | (1 << 1);
-    occupancy_sensor_config.occupancy_sensing.occupancy_sensor_type = 4;
-    occupancy_sensor_config.occupancy_sensing.occupancy_sensor_type_bitmap = (1 << 2);
-
-    endpoint_t *endpoint = occupancy_sensor::create(cpp_node, &occupancy_sensor_config, ENDPOINT_FLAG_NONE, nullptr);
-    if (!endpoint) {
-        return 0;
-    }
-    
+    occupancy_sensor::config_t cfg;
+    // Mirror previous explicit config
+    cfg.occupancy_sensing.feature_flags = (1 << 0) | (1 << 1);
+    cfg.occupancy_sensing.occupancy_sensor_type = 0x04;
+    cfg.occupancy_sensing.occupancy_sensor_type_bitmap = (1 << 2);
+    endpoint_t *endpoint = occupancy_sensor::create(cpp_node, &cfg, ENDPOINT_FLAG_NONE, nullptr);
+    if (!endpoint) return 0;
     return endpoint::get_id(endpoint);
 }
 

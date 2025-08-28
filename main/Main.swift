@@ -4,11 +4,11 @@ func app_main() {
 
     // Set log levels to reduce verbosity
     esp_log_level_set("*", ESP_LOG_INFO)
-            esp_log_level_set("esp_matter", ESP_LOG_DEBUG)
-        esp_log_level_set("ld2410c_wrapper", ESP_LOG_INFO)
-        esp_log_level_set("LD2410", ESP_LOG_INFO)
-        esp_log_level_set("esp_matter_attribute", ESP_LOG_INFO)
-    esp_log_level_set("LD2410", ESP_LOG_WARN)
+    esp_log_level_set("esp_matter", ESP_LOG_DEBUG)
+    esp_log_level_set("ld2410c_wrapper", ESP_LOG_INFO)
+    // Keep LD2410 at INFO so we can see frame/debug output if enabled in driver
+    esp_log_level_set("LD2410", ESP_LOG_INFO)
+    esp_log_level_set("esp_matter_attribute", ESP_LOG_INFO)
     esp_log_level_set("wifi", ESP_LOG_WARN)
     esp_log_level_set("chip", ESP_LOG_WARN)
 

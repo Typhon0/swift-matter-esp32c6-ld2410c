@@ -4,6 +4,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_timer.h"
 
 // Using UART1, but this can be changed.
 // Make sure to connect the LD2410C sensor to the correct pins on the ESP32-C6.
@@ -16,6 +17,7 @@
 
 static const char *TAG_WRAPPER = "ld2410c_wrapper";
 static LD2410Driver* ld2410_sensor = nullptr;
+static uint32_t ld2410_init_time_ms = 0;
 
 void ld2410c_init() {
     ESP_LOGI(TAG_WRAPPER, "Initializing LD2410C sensor driver.");
@@ -42,6 +44,7 @@ void ld2410c_init() {
     }
 
     ESP_LOGI(TAG_WRAPPER, "LD2410C sensor initialized.");
+    ld2410_init_time_ms = (uint32_t)(esp_timer_get_time() / 1000ULL);
     std::string fw = ld2410_sensor->getFirmware();
     if (!fw.empty()) {
         ESP_LOGI(TAG_WRAPPER, "LD2410C Firmware: %s", fw.c_str());
@@ -51,9 +54,35 @@ void ld2410c_init() {
 }
 
 void ld2410c_poll() {
-    // The driver implementation reads data on demand in presenceDetected(),
-    // so a separate polling function is not strictly necessary for this driver design.
-    // This function is kept for API compatibility with the Swift code.
+    // Trigger a lightweight read to update internal buffers by asking for presence.
+    if (ld2410_sensor) {
+        // Read any pending UART frames (ACK or DATA). This updates internal status.
+        ld2410_sensor->check();
+        bool present = ld2410_sensor->presenceDetected();
+        static uint8_t lastStatus = 0xFF;
+        static bool warnedNoData = false;
+        uint32_t now_ms = (uint32_t)(esp_timer_get_time() / 1000ULL);
+        uint8_t st = ld2410_sensor->getStatus();
+        if (st != lastStatus) {
+            switch (st) {
+                case 0: ESP_LOGI(TAG_WRAPPER, "State: 0 No target"); break;
+                case 1: ESP_LOGI(TAG_WRAPPER, "State: 1 Moving only"); break;
+                case 2: ESP_LOGI(TAG_WRAPPER, "State: 2 Stationary only"); break;
+                case 3: ESP_LOGI(TAG_WRAPPER, "State: 3 Moving & Stationary"); break;
+                case 4: ESP_LOGI(TAG_WRAPPER, "State: 4 Auto thresholds in progress"); break;
+                case 5: ESP_LOGI(TAG_WRAPPER, "State: 5 Auto thresholds success"); break;
+                case 6: ESP_LOGI(TAG_WRAPPER, "State: 6 Auto thresholds failed"); break;
+                default: ESP_LOGI(TAG_WRAPPER, "State: 0x%02X Invalid/Expired", st); break;
+            }
+            lastStatus = st;
+        }
+        // If no valid data yet (status 0xFF) for > 3000 ms after init, warn once.
+        if (st == 0xFF && !warnedNoData && (now_ms - ld2410_init_time_ms) > 3000) {
+            ESP_LOGW(TAG_WRAPPER, "No LD2410C data frames received yet (status 0xFF). Check wiring, power, baud (256000), and TX/RX pins (TX GPIO2 -> sensor RX, RX GPIO3 -> sensor TX).");
+            warnedNoData = true;
+        }
+        (void)present; // present is derived from status
+    }
 }
 
 bool ld2410c_is_present() {
@@ -62,5 +91,10 @@ bool ld2410c_is_present() {
     }
     ESP_LOGW(TAG_WRAPPER, "ld2410c_is_present() called before initialization.");
     return false;
+}
+
+uint8_t ld2410c_status() {
+    if (ld2410_sensor) return ld2410_sensor->getStatus();
+    return 0xFF;
 }
 
